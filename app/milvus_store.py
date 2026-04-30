@@ -7,10 +7,12 @@ class MilvusChunkStore:
         host: str,
         port: str,
         collection_name: str,
+        #向量维度  就是一个向量里有多少个数字
         embedding_dim: int,
     ) -> None:
         self.collection_name = collection_name
         self.client = MilvusClient(uri=f"http://{host}:{port}")
+        #检查 Milvus 里是否已经有这个 collection，有就直接加载;没有就按 schema 定义创建它
         self._ensure_collection(embedding_dim)
 
     def insert_chunks(
@@ -29,6 +31,8 @@ class MilvusChunkStore:
                 "chunk_index": chunk_index,
                 "source_filename": source_filename,
             }
+            #enumerate在每对前面加序号
+            #TODO: 为什么要加序号？
             for chunk_index, (chunk, vector) in enumerate(zip(chunks, vectors))
         ]
 
@@ -70,23 +74,30 @@ class MilvusChunkStore:
         if self.client.has_collection(self.collection_name):
             self.client.load_collection(collection_name=self.collection_name)
             return
-
+        ##enable_dynamic_field=False 表示禁止动态字段。
         schema = self.client.create_schema(auto_id=False, enable_dynamic_field=False)
+        #"id"：字段名DataType.VARCHAR：字符串类型
+        # is_primary=True：主键，每条数据唯一标识，不能重复
         schema.add_field("id", DataType.VARCHAR, is_primary=True, max_length=128)
         schema.add_field("text", DataType.VARCHAR, max_length=65535)
+        #向量维度 DataType.FLOAT_VECTOR：浮点向量类型，专门用于存 embedding
         schema.add_field("dense_vec", DataType.FLOAT_VECTOR, dim=embedding_dim)
         schema.add_field("doc_id", DataType.VARCHAR, max_length=64)
         schema.add_field("chunk_index", DataType.INT64)
+        #文件名
         schema.add_field("source_filename", DataType.VARCHAR, max_length=512)
 
         index_params = self.client.prepare_index_params()
         index_params.add_index(
+            #给哪个字段建索引
             field_name="dense_vec",
             index_type="IVF_FLAT",
+            #相似度计算方式
             metric_type="COSINE",
+            #把所有向量分成 128 个簇
             params={"nlist": 128},
         )
-
+        #创建集合
         self.client.create_collection(
             collection_name=self.collection_name,
             schema=schema,
