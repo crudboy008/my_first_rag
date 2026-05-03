@@ -32,7 +32,6 @@ class MilvusChunkStore:
                 "source_filename": source_filename,
             }
             #enumerate在每对前面加序号
-            #TODO: 为什么要加序号？
             for chunk_index, (chunk, vector) in enumerate(zip(chunks, vectors))
         ]
 

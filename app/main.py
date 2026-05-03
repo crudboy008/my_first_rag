@@ -7,6 +7,8 @@ from app.config import settings
 from app.embeddings import TongyiEmbedder
 from app.milvus_store import MilvusChunkStore
 from app.pdf_loader import extract_pdf_text, save_upload_file
+from app.llm_reranker import LLMReranker
+from app.reranker import BGEReranker
 from app.schemas import SearchRequest, SearchResponse, UploadResponse
 
 
@@ -14,6 +16,7 @@ app = FastAPI(title="my_first_rag", version="0.1.0")
 
 _embedder: TongyiEmbedder | None = None
 _store: MilvusChunkStore | None = None
+_reranker: BGEReranker | LLMReranker | None = None
 
 
 @app.get("/health")
@@ -24,8 +27,8 @@ def health() -> dict[str, str]:
 @app.post("/api/upload", response_model=UploadResponse)
 def upload_pdf(file: UploadFile = File(...)) -> UploadResponse:
     doc_id = str(uuid4())
-    #这行把用户上传的 PDF 保存到本地目录
-    pdf_path = save_upload_file(settings.upload_dir, file)
+    #这行把用户上传的 PDF 保存到本地目录，文件名前缀用 doc_id 保持一致
+    pdf_path = save_upload_file(settings.upload_dir, file, doc_id)
 
     try:
         #pdf提取文本
@@ -46,16 +49,27 @@ def upload_pdf(file: UploadFile = File(...)) -> UploadResponse:
             chunks=chunks,
             vectors=vectors,
         )
-    except:
+        return UploadResponse(
+            doc_id=doc_id,
+            chunk_count=chunk_count,
+            filename=file.filename or pdf_path.name,
+        )
+    except HTTPException:
+        # 已经是规范的 HTTP 异常,直接清理副作用并重抛
         pdf_path.unlink(missing_ok=True)
+        raise
+    except Exception as e:
+        # 其他未预料异常,清理副作用 + 包装成 500 抛出
+        pdf_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"upload failed: {type(e).__name__}: {e}",
+        ) from e
     finally:
+        # 无论成败都关闭上传文件描述符
         file.file.close()
 
-    return UploadResponse(
-        doc_id=doc_id,
-        chunk_count=chunk_count,
-        filename=file.filename or pdf_path.name,
-    )
+
 
 
 @app.post("/api/search", response_model=SearchResponse)
@@ -66,11 +80,19 @@ def search_chunks(request: SearchRequest) -> SearchResponse:
 
     query_vector = get_embedder().embed_query(query)
     _validate_vectors([query_vector])
-    chunks = get_store().search(query_vector, request.top_k)
+
+    if request.use_reranker:
+        # 两阶段召回：Milvus 粗召 candidate_k 条 → reranker 精排 → 返回 top_k
+        #TODO:settings.reranker_candidate_k为什么要设置为20，为什么这里要作对比取最大值？
+        candidate_k = max(request.top_k, settings.reranker_candidate_k)
+        candidates = get_store().search(query_vector, candidate_k)
+        chunks = get_reranker().rerank(query, candidates, request.top_k)
+    else:
+        # baseline：直接返回 Milvus 向量相似度 top_k
+        chunks = get_store().search(query_vector, request.top_k)
 
     return SearchResponse(chunks=chunks)
 
-#TODO：为什么这里要用单例设计模式懒加载？
 def get_embedder() -> TongyiEmbedder:
     global _embedder
     #单例设计模式懒加载
@@ -83,7 +105,6 @@ def get_embedder() -> TongyiEmbedder:
 
     return _embedder
 
-#TODO: 同理，为什么这种建立数据库连接的操作为什么不专门做个类去存放而是塞进main里？这里是不是可以考虑多线程做个连接池？
 def get_store() -> MilvusChunkStore:
     global _store
 
@@ -97,7 +118,24 @@ def get_store() -> MilvusChunkStore:
 
     return _store
 
-#TODO:为什么这_validate_vectors也要抽一个方法出来，如果这段代码使用频繁为什么不抽一个公共方法，这种情况一般传入多少维度的向量数据不都应该提前规划好么，什么场景会传入维度不匹配的字段
+
+def get_reranker() -> BGEReranker | LLMReranker:
+    global _reranker
+    if _reranker is None:
+        if settings.reranker_backend == "bge":
+            _reranker = BGEReranker(
+                model_name=settings.reranker_model,
+                use_fp16=settings.reranker_use_fp16,
+            )
+        else:
+            # 默认 llm 兜底，不依赖本地模型权重
+            _reranker = LLMReranker(
+                api_key=settings.dashscope_api_key,
+                model=settings.llm_reranker_model,
+                doc_max_chars=settings.llm_reranker_doc_max_chars,
+            )
+    return _reranker
+
 def _validate_vectors(vectors: list[list[float]]) -> None:
     for vector in vectors:
         #确认 DashScope 实际返回的向量维度和 Milvus 建表时声明的维度一致

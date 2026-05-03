@@ -19,3 +19,16 @@
 - 结果:有效学习时间损失约 2 小时,
        原计划手搓上传接口需要压缩
 - 下一步:21:00 起按精简版执行,目标降到"今晚有一个 commit"
+
+## 2026-05-01 — 修复磁盘文件名与 doc_id 不一致问题
+
+- `save_upload_file` 增加 `doc_id` 参数，文件保存路径改为 `{doc_id}_{filename}`
+- `main.py` 调用处把已生成的 `doc_id` 传入，不再各自 `uuid4()`
+- 为什么:之前磁盘 PDF 文件名用的是新 UUID,跟 Milvus 里 doc_id 完全无关,导致检索结果反查不到原始文件、孤儿 PDF 也对不上账。业务实体 ID 必须贯穿 HTTP 请求 → 文件系统 → 数据库全程
+- 顺手清理 `pdf_loader.py` 里 4.30 已答的 TODO 注释
+
+## 2026-05-03 — 测试集补 5 条到 25 + 接 BGE-Reranker 跑 Eval 对比
+
+### [16:44] 下载BGE模型失败，reranker流程无法执行
+- 问claude desktop拿了LLM兜底策略，走LLM不走BGE了，cursor生成代码我去review
+
