@@ -6,3 +6,7 @@ data/uploads/
 .pytest_cache/
 .mypy_cache/
 .idea/
+
+# 项目根 CLAUDE.md 含数据快照与个人协作规则，不进 git（隐私保护）
+CLAUDE.md
+docs/claude-context*.md
