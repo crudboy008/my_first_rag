@@ -1,0 +1,503 @@
+{
+  "summary": {
+    "total": 25,
+    "hit_at_k": 0.76,
+    "mrr": 0.6533333333333333,
+    "latency_ms": {
+      "p50": 2158.1514999998035,
+      "p95": 2416.110279998975,
+      "p99": 14255.271227997697
+    }
+  },
+  "by_topic": {
+    "信用卡分期": {
+      "total": 8,
+      "hit_at_k": 0.75,
+      "mrr": 0.6875
+    },
+    "个人贷款": {
+      "total": 6,
+      "hit_at_k": 0.5,
+      "mrr": 0.3888888888888889
+    },
+    "企业贷款": {
+      "total": 6,
+      "hit_at_k": 0.8333333333333334,
+      "mrr": 0.75
+    },
+    "监管合规": {
+      "total": 5,
+      "hit_at_k": 1.0,
+      "mrr": 0.8
+    }
+  },
+  "by_difficulty": {
+    "easy": {
+      "total": 10,
+      "hit_at_k": 0.9,
+      "mrr": 0.85
+    },
+    "medium": {
+      "total": 10,
+      "hit_at_k": 0.7,
+      "mrr": 0.5333333333333333
+    },
+    "hard": {
+      "total": 5,
+      "hit_at_k": 0.6,
+      "mrr": 0.5
+    }
+  },
+  "details": [
+    {
+      "id": "test_001",
+      "query": "信用卡分期利息怎么算",
+      "expected_doc_id": "ce53358d-eece-45d2-88d2-0c64b1d87199_0",
+      "topic": "信用卡分期",
+      "difficulty": "easy",
+      "hit": 0,
+      "rank": null,
+      "rr": 0.0,
+      "latency_ms": 17992.785299997195,
+      "returned_ids": [
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_1",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_2",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_13",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_4",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_10"
+      ]
+    },
+    {
+      "id": "test_002",
+      "query": "信用卡透支利率年化多少",
+      "expected_doc_id": "ce53358d-eece-45d2-88d2-0c64b1d87199_2",
+      "topic": "信用卡分期",
+      "difficulty": "easy",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2010.0950999985798,
+      "returned_ids": [
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_2",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_1",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_6",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_7",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_13"
+      ]
+    },
+    {
+      "id": "test_003",
+      "query": "提前还清分期要交手续费吗",
+      "expected_doc_id": "ce53358d-eece-45d2-88d2-0c64b1d87199_2",
+      "topic": "信用卡分期",
+      "difficulty": "medium",
+      "hit": 1,
+      "rank": 2,
+      "rr": 0.5,
+      "latency_ms": 2002.4552999966545,
+      "returned_ids": [
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_13",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_2",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_4",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_3",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_10"
+      ]
+    },
+    {
+      "id": "test_004",
+      "query": "连续逾期两个月会怎样",
+      "expected_doc_id": "ce53358d-eece-45d2-88d2-0c64b1d87199_13",
+      "topic": "信用卡分期",
+      "difficulty": "hard",
+      "hit": 0,
+      "rank": null,
+      "rr": 0.0,
+      "latency_ms": 1995.2335999987554,
+      "returned_ids": [
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_17",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_30",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_14",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_11",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_16"
+      ]
+    },
+    {
+      "id": "test_005",
+      "query": "申请已出账单分期后申请金额怎么算",
+      "expected_doc_id": "ce53358d-eece-45d2-88d2-0c64b1d87199_10",
+      "topic": "信用卡分期",
+      "difficulty": "easy",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2419.8099999994156,
+      "returned_ids": [
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_10",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_0",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_8",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_6",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_2"
+      ]
+    },
+    {
+      "id": "test_006",
+      "query": "信用卡涉及洗钱属于什么风险",
+      "expected_doc_id": "ce53358d-eece-45d2-88d2-0c64b1d87199_12",
+      "topic": "信用卡分期",
+      "difficulty": "medium",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2158.1514999998035,
+      "returned_ids": [
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_12",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_11",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_13",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_14",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_6"
+      ]
+    },
+    {
+      "id": "test_007",
+      "query": "我可以提前还款吗",
+      "expected_doc_id": "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_9",
+      "topic": "个人贷款",
+      "difficulty": "easy",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2187.2881000017514,
+      "returned_ids": [
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_9",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_2",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_16",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_3",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_2"
+      ]
+    },
+    {
+      "id": "test_008",
+      "query": "我拖欠利息算违约吗",
+      "expected_doc_id": "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_14",
+      "topic": "个人贷款",
+      "difficulty": "easy",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2061.756000002788,
+      "returned_ids": [
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_14",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_17",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_6",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_3",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_2"
+      ]
+    },
+    {
+      "id": "test_009",
+      "query": "我住的地方变了需要通知银行吗",
+      "expected_doc_id": "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_19",
+      "topic": "个人贷款",
+      "difficulty": "medium",
+      "hit": 0,
+      "rank": null,
+      "rr": 0.0,
+      "latency_ms": 2249.257099996612,
+      "returned_ids": [
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_4",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_20",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_30",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_15",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_14"
+      ]
+    },
+    {
+      "id": "test_010",
+      "query": "我跟银行有矛盾怎么解决",
+      "expected_doc_id": "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_22",
+      "topic": "个人贷款",
+      "difficulty": "medium",
+      "hit": 0,
+      "rank": null,
+      "rr": 0.0,
+      "latency_ms": 2021.7133999976795,
+      "returned_ids": [
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_14",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_13",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_11",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_12",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_4"
+      ]
+    },
+    {
+      "id": "test_011",
+      "query": "我违约了银行找我打官司的话钱怎么算",
+      "expected_doc_id": "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_20",
+      "topic": "个人贷款",
+      "difficulty": "hard",
+      "hit": 0,
+      "rank": null,
+      "rr": 0.0,
+      "latency_ms": 2232.1549999978743,
+      "returned_ids": [
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_10",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_13",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_17",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_16",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_4"
+      ]
+    },
+    {
+      "id": "test_012",
+      "query": "借钱需要工商营业执照吗",
+      "expected_doc_id": "f3508d9f-fe32-49f7-8b47-dd4499115630_0",
+      "topic": "企业贷款",
+      "difficulty": "easy",
+      "hit": 1,
+      "rank": 2,
+      "rr": 0.5,
+      "latency_ms": 2380.3952999951434,
+      "returned_ids": [
+        "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+        "f3508d9f-fe32-49f7-8b47-dd4499115630_0",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_20",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_1",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_6"
+      ]
+    },
+    {
+      "id": "test_013",
+      "query": "我借这个钱去投资可以吗",
+      "expected_doc_id": "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+      "topic": "企业贷款",
+      "difficulty": "medium",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2248.467299999902,
+      "returned_ids": [
+        "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_20",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_10",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_6",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_17"
+      ]
+    },
+    {
+      "id": "test_014",
+      "query": "贷款额度期限最长多久",
+      "expected_doc_id": "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+      "topic": "企业贷款",
+      "difficulty": "easy",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2040.4981000028783,
+      "returned_ids": [
+        "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_0",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_7",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_8",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_9"
+      ]
+    },
+    {
+      "id": "test_015",
+      "query": "有官司在身上能借钱吗",
+      "expected_doc_id": "f3508d9f-fe32-49f7-8b47-dd4499115630_0",
+      "topic": "企业贷款",
+      "difficulty": "medium",
+      "hit": 0,
+      "rank": null,
+      "rr": 0.0,
+      "latency_ms": 2055.949800000235,
+      "returned_ids": [
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_15",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_14",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_10",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_6",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_16"
+      ]
+    },
+    {
+      "id": "test_016",
+      "query": "哪些场景算我经营范围外，贷款不适用的",
+      "expected_doc_id": "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+      "topic": "企业贷款",
+      "difficulty": "hard",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2154.878400004236,
+      "returned_ids": [
+        "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_12",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_20",
+        "f3508d9f-fe32-49f7-8b47-dd4499115630_0",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_14"
+      ]
+    },
+    {
+      "id": "test_017",
+      "query": "国家金融监督管理总局问记者答网址是哪个",
+      "expected_doc_id": "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_32",
+      "topic": "监管合规",
+      "difficulty": "easy",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2401.311399997212,
+      "returned_ids": [
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_32",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_18",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_26",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_31",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_27"
+      ]
+    },
+    {
+      "id": "test_018",
+      "query": "消费金融公司倒闭了要怎么处理",
+      "expected_doc_id": "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_29",
+      "topic": "监管合规",
+      "difficulty": "medium",
+      "hit": 1,
+      "rank": 2,
+      "rr": 0.5,
+      "latency_ms": 1717.0842999985325,
+      "returned_ids": [
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_28",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_29",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_8",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_10",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_27"
+      ]
+    },
+    {
+      "id": "test_019",
+      "query": "贷款机构的催收记录至少要保存多久",
+      "expected_doc_id": "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_23",
+      "topic": "监管合规",
+      "difficulty": "medium",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2173.6052999985986,
+      "returned_ids": [
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_23",
+        "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_12",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_9",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_2"
+      ]
+    },
+    {
+      "id": "test_020",
+      "query": "贷款机构倒闭国家要怎么清算",
+      "expected_doc_id": "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_29",
+      "topic": "监管合规",
+      "difficulty": "hard",
+      "hit": 1,
+      "rank": 2,
+      "rr": 0.5,
+      "latency_ms": 2048.9993999945,
+      "returned_ids": [
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_30",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_29",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_28",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_16",
+        "f3508d9f-fe32-49f7-8b47-dd4499115630_1"
+      ]
+    },
+    {
+      "id": "test_021",
+      "query": "钱没还完能注销信用卡吗",
+      "expected_doc_id": "ce53358d-eece-45d2-88d2-0c64b1d87199_4",
+      "topic": "信用卡分期",
+      "difficulty": "easy",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2043.2170999993104,
+      "returned_ids": [
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_4",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_14",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_30",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_12",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_2"
+      ]
+    },
+    {
+      "id": "test_022",
+      "query": "银行直接从我信用卡扣钱是什么情况",
+      "expected_doc_id": "ce53358d-eece-45d2-88d2-0c64b1d87199_14",
+      "topic": "信用卡分期",
+      "difficulty": "hard",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2177.262700002757,
+      "returned_ids": [
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_14",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_13",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_12",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_2",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_14"
+      ]
+    },
+    {
+      "id": "test_023",
+      "query": "一个月没还上钱算不算违约",
+      "expected_doc_id": "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_14",
+      "topic": "个人贷款",
+      "difficulty": "medium",
+      "hit": 1,
+      "rank": 3,
+      "rr": 0.3333333333333333,
+      "latency_ms": 2356.5620000008494,
+      "returned_ids": [
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_2",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_6",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_14",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_2",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_3"
+      ]
+    },
+    {
+      "id": "test_024",
+      "query": "小微企业循环贷利率怎么算",
+      "expected_doc_id": "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+      "topic": "企业贷款",
+      "difficulty": "easy",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2394.6398999978555,
+      "returned_ids": [
+        "f3508d9f-fe32-49f7-8b47-dd4499115630_1",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_6",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_7",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_3",
+        "ce53358d-eece-45d2-88d2-0c64b1d87199_1"
+      ]
+    },
+    {
+      "id": "test_025",
+      "query": "贷款公司有没有义务做好风控",
+      "expected_doc_id": "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_16",
+      "topic": "监管合规",
+      "difficulty": "medium",
+      "hit": 1,
+      "rank": 1,
+      "rr": 1.0,
+      "latency_ms": 2126.353300001938,
+      "returned_ids": [
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_16",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_23",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_12",
+        "a7fd6ed0-8e94-4b15-8dea-5aa81868429c_10",
+        "2f3ccec0-103b-46ef-9cce-d4f3f2183eee_24"
+      ]
+    }
+  ]
+}
