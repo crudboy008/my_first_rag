@@ -14,6 +14,8 @@ class Settings(BaseModel):
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "50"))
     embedding_dim: int = int(os.getenv("EMBEDDING_DIM", "1536"))
     embedding_batch_size: int = int(os.getenv("EMBEDDING_BATCH_SIZE", "10"))
+    # 上传 PDF 大小上限（字节），默认 50MB
+    max_pdf_size: int = int(os.getenv("MAX_PDF_SIZE", "52428800"))
     # reranker 后端选择："llm" 用通义打分（稳定兜底）；"bge" 用本地模型（需先下载权重）
     reranker_backend: str = os.getenv("RERANKER_BACKEND", "llm")
     # Milvus 初召回候选数量，给 reranker 留足候选池
@@ -26,6 +28,10 @@ class Settings(BaseModel):
     llm_reranker_model: str = os.getenv("LLM_RERANKER_MODEL", "qwen-turbo")
     # 每个 doc 送入 prompt 前截断的字符数，避免 prompt 过长、注意力分散
     llm_reranker_doc_max_chars: int = int(os.getenv("LLM_RERANKER_DOC_MAX_CHARS", "500"))
+    # LLM 答案生成（/api/ask）配置
+    answer_model: str = os.getenv("ANSWER_MODEL", "qwen-turbo")
+    answer_max_tokens: int = int(os.getenv("ANSWER_MAX_TOKENS", "500"))
+    answer_temperature: float = float(os.getenv("ANSWER_TEMPERATURE", "0.1"))
 
 
 settings = Settings()

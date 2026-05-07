@@ -29,3 +29,26 @@ class SearchChunk(BaseModel):
 
 class SearchResponse(BaseModel):
     chunks: list[SearchChunk]
+
+
+class AskRequest(BaseModel):
+    query: str = Field(..., min_length=1)
+    top_k: int = Field(default=5, ge=1, le=20)
+    # True 走 Milvus 粗召 → reranker 精排 → top_k；False 直接 Milvus top_k（A/B 对比 / 延时优先）
+    use_reranker: bool = Field(default=True)
+
+
+class Citation(BaseModel):
+    chunk_id: str
+    score: float
+    text_snippet: str
+
+
+class AskResponse(BaseModel):
+    answer: str
+    citations: list[Citation]
+
+
+class DeleteResponse(BaseModel):
+    deleted_chunks: int
+    deleted_files: list[str]

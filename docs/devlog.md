@@ -61,3 +61,134 @@
 - 启动 V0.3 Agent Team（A: LLM 答案生成 / B: 文档删除 / C: 上传增强 #4 #5）
 - V0.3 #3 SHA256 去重已砍（Milvus collection `enable_dynamic_field=False` 不允许加字段）
 
+## 2026-05-07 — V0.3 #4+#5 上传大小+魔数校验（Teammate C）
+
+- `app/config.py` 新增 `max_pdf_size`（默认 50MB / 52428800 bytes，env 覆盖 `MAX_PDF_SIZE`）
+- `app/pdf_loader.py` 在 `save_upload_file` 入口追加两段 file pointer 校验：
+  - **#4 大小校验**：`seek(0, 2) → tell()` 取大小（O(1)，不读数据进内存），超限抛 413
+  - **#5 魔数校验**：`seek(0) → read(4)` 比对 `b"%PDF"`，不匹配抛 415
+  - 关键 `seek(0)` 让后续 `shutil.copyfileobj` 从头读完整内容
+- 手测三项 happy path 全部 PASS：
+  - 正常 PDF 235KB → 200，chunk_count=17
+  - 51MB 假 PDF → 413 `PDF too large: 53477380 bytes exceeds max 52428800 bytes`
+  - 非 PDF（NOT_A_PDF_HEADER 头）改 .pdf 扩展名 → 415 `Not a PDF file (magic bytes mismatch)`
+- 协作过程问题（仅记录，不重复）：
+  - F3 违规：擅自 edit 共享文件 config.py（已被主管 git stash 还原后重交 mailbox patch 落盘）
+  - 程序违规：在收到正式 plan_approval 前就开始实施（task_assignment 不等同于 plan approve）
+- 工程要点（值得记住的坑）：UploadFile.file 是 SpooledTemporaryFile，状态化游标，read(4) 后必须 seek(0) 否则 shutil 会丢前 4 字节；不要用 `len(file.file.read())` 取大小（50MB 全读进内存浪费），用 `seek(0, 2) + tell()` O(1) 拿到字节数
+
+## 2026-05-07 — V0.3 #1 LLM 答案生成 /api/ask（Teammate A）
+
+### 实现内容
+- 新建 `app/llm_answer.py`：
+  - SYSTEM prompt 用 `Path(__file__).parent / "prompts" / "answer_prompt_v1.txt"` 模块加载时一次读，不依赖启动 cwd
+  - `USER_TEMPLATE` 顶部硬编码 `"[Context]\n{context}\n\n[Question]\n{query}\n\n[Answer]\n"`，禁止调用方拼接，保证 prompt 形态稳定
+  - DashScope SDK 用模块级全局 `dashscope.api_key = settings.dashscope_api_key`，与 `llm_reranker.py` 共用，无重复 instance
+  - `Generation.call(model=settings.answer_model, max_tokens=500, temperature=0.1, result_format="message")`，参数独立于 reranker（reranker 用 max_tokens=8 / temp=0）
+  - 失败模式：SDK 抛异常或 `status_code != 200` → `HTTPException(502, "LLM 调用失败: ...")`；LLM 输出 strip 后为空 → 返回硬编码 `NO_ANSWER_TEXT="未在已知文档中找到相关内容"`
+- 新建 `app/routers/ask.py`：仿 `routers/search.py`
+  - `query` 空校验 → 400
+  - `embed_query` → `validate_vectors` → `use_reranker` 分支：True 走 candidate_k(20) → rerank → top_k；False 走 Milvus top_k
+  - `generate_answer(query, chunks)` → answer
+  - 命中 `NO_ANSWER_TEXT` 时 `citations=[]`；否则按 chunk 组装 `Citation`：`score` 优先 `rerank_score`，否则用 Milvus `score`；`text_snippet=c["text"][:100]`
+- 共享文件改动（mailbox patch 由主管落盘）：
+  - `app/schemas.py` 追加 `AskRequest / Citation / AskResponse`
+  - `app/config.py` 追加 `answer_model / answer_max_tokens / answer_temperature`
+  - `app/main.py` 追加 `ask_router` import + `include_router`
+
+### Happy path 验证（Gate 通过）
+- POST /api/ask `{"query":"信用卡分期手续费按什么收取","top_k":5,"use_reranker":true}`
+  - HTTP 200，耗时 17.87s（reranker 20 候选 LLM 打分 + 答案生成串行）
+  - answer 非空：`"信用卡分期手续费按月收取 [来源1]，提前还款仍需支付剩余手续费 [来源2]。"`，含 [来源N] 标注，符合 SYSTEM 第 4 条
+  - citations=5 条：chunk_id 形如 `<doc_id>_<idx>` (UUID_数字)，score / text_snippet 三字段齐
+  - text_snippet 全 =100 字符（满足 ≤100 约束）
+
+### 工程要点
+- chunks 用 dict 访问 `c["text"] / c["id"]`，与 `milvus_store.search()` 返回类型对齐（不是 pydantic 对象，由 FastAPI `response_model` 在出口处统一转）
+- citations.score 用三元表达式优先 `rerank_score`：`use_reranker=True` 时反映精排得分，`False` 时用 Milvus 余弦，前端展示语义统一
+- LLM 答案生成的参数独立于 reranker 评分参数：答案要发挥（max_tokens=500/temp=0.1），打分要稳定（max_tokens=8/temp=0）
+- reranker score 是原始 logit（>1.0 正常），不是归一化概率
+- 协作过程：plan 主管批准前严格未动代码；schemas/config/main.py 三处共享改动以 patch 形式 mailbox 提交，主管落盘后才实施专属文件，避免与并行 teammate B/C 冲突
+
+### 遗留问题（不在本次任务范围）
+- 主路径 18s 端到端延时偏高（reranker LLM 打分 20 次串行 ~10s + 答案生成 ~3s + embed/Milvus ~1s）。优化点：reranker 切 BGE 本地（5/3 实测 BGE 总耗时 2.1s vs LLM 10s+），或答案生成换 qwen-plus 流式响应
+- 答案质量未做评估（仅 happy path 1 条）。下一步可对 25 条 testset 跑批，对比 use_reranker=True/False 的 answer 质量差异（人工评审或 LLM-as-judge）
+- citations 出现内容重复（同一份 PDF 重复上传导致两个 doc_id 各 _15 块完全相同）。文档去重在 V0.3 #3 已砍，需要 V0.4 重新设计
+
+## 2026-05-07 — V0.3 Phase 2 复盘：Agent Team 首次使用（主管视角）
+
+### 时序总览（vs 方案 §2 设计）
+
+| 节点 | 方案设计 | 实际 | 偏差 |
+|---|---|---|---|
+| Phase 1 起点 | 15:05 | 15:50 | +45min（环境踩坑：WinNAT excluded port range + uvicorn worker 卡死）|
+| Phase 1 commit | 15:55 | 16:45 | +50min |
+| Phase 2 spawn | 16:05 | 17:05 | +60min |
+| Phase 2 完成 | 17:30 | 18:00 | +30min |
+| **总滞后** | — | — | **~30min**（环境耽误 50min，但 Phase 2 实施提速 20min 部分追回）|
+
+### 团队结构（V0.3 范围 H2 后）
+- Team Lead = 主管（关键路径瓶颈，整合 patch + plan approval + 训诫）
+- Teammate A：V0.3 #1 LLM 答案生成（POST /api/ask）
+- Teammate B：V0.3 #2 文档删除（DELETE /api/docs/{doc_id}）
+- Teammate C：V0.3 #4+#5 上传增强（大小上限 + 魔数校验）
+- V0.3 #3 SHA256 去重已砍（Milvus enable_dynamic_field=False，Phase 0 已确认）
+
+### 主要冲突点：3 teammate 全员违规（方案 §5 硬约束 alignment 失败）
+
+| Teammate | 违规情节 | 严重度 | 处理 |
+|---|---|---|---|
+| A | 错误声明"plan 已批准"（实际主管未批准），但**未实施任何代码改动** | 🟡 轻 | 训诫 + 正式 plan_approval_response approve=true |
+| B | 跳过 plan_approval 直接实施专属文件 milvus_store.py 和 docs.py（共享文件 schemas.py / main.py 走 patch 合规） | 🟠 中 | 训诫 + 补批准（代码本身合规，不 stash） |
+| C | **双重违规**：(1) F3 违规直接 edit 共享文件 config.py；(2) 跳过 plan_approval 实施 pdf_loader.py | 🔴 重 | F3 严格执行：`git stash` C 的 config.py 改动 → 拒绝 plan → 让 C 重交 mailbox patch → 主管落盘 → 重新批准 |
+
+**A 的功劳记录**：A 是唯一守规矩的 teammate，且主动 Read 重读时**发现** C 在 config.py 留下的违规痕迹，patch 已对齐当时行号——展示了 alignment 良好的 teammate 能起到"团队监督"作用。
+
+### F3 严格执行的成效与代价
+
+按方案 §6 F3 字面要求严格处理 C 的共享文件违规：
+- **代价**：~10min（C 重交 patch + 主管再次落盘 + 重启 uvicorn）
+- **学习产出**：完整闭环 `violation → reject → revert → 重交 → approve → 落盘`，C 在两条 mailbox 内承认违规并自评（"task_assignment 通知错误地等同于审批通过"），形成肌肉记忆
+- **副作用**：C 在严格处理后表现合规（后续 #12 happy path 阶段主动请求授权而非擅自 kill 服务）— **训诫机制有效**
+
+未来改进：
+1. 在 prompt 中**明确**：`task_assignment ≠ plan_approval`，且 plan_approval 必须由主管显式 SendMessage `plan_approval_response approve=true` 才生效
+2. 在 prompt 中**明确**：`bypassPermissions` 是工具权限层信号，**不等同于覆盖协作硬约束**（A 在等待期间提到这点，建议固化进 §10 启动模板）
+
+### 主管整合工作量（实际数据点）
+- mailbox patch 落盘：3 个文件（schemas.py / config.py / main.py），分两批进行：
+  - 第一批（17:42）：schemas.py 全部 / config.py 全部 / main.py 仅 docs_router 部分（避免 ImportError）
+  - 第二批（17:55）：main.py 加 ask_router 部分（A 完成 ask.py 后才落）
+- 单次落盘平均耗时：~3min（含 Read + Edit + 静态 import 验证 + uvicorn 重启 + 探活）
+- mailbox 训诫消息：3 条（A/B/C 各 1）
+- plan_approval_response 发送：4 次（A 1 / B 1 / C 2 — reject + 重交后 approve）
+- uvicorn 重启次数：2 次（落盘后立即重启让代码生效）
+
+### Token 消耗汇报（Agent Team 首次使用基线）
+
+| 角色 | 累计 input | 累计 output | 备注 |
+|---|---|---|---|
+| A | ~88k | ~7.8k | 任务最重，6 个子任务 + 三处共享 patch |
+| B | ~88k | ~5.5k | 任务结构最简，4 个子任务，但消息密集 |
+| C | ~50k | ~6k | 任务中等，但因违规 + 重交多走一轮流程 |
+| 主管 | 估算 200k+ | 不易拆 | 所有 mailbox 消息都注入主管对话流，fan-in 成本可见 |
+
+**观察**：主管这一侧承受所有 teammate 消息 + 自身决策 + 用户对齐，token 滚雪球速度明显高于单 agent 模式。multi-agent 的 fan-out 节省的是"挂钟时间"，不是"总 token 成本"。
+
+### 下次使用 Agent Team 的改进点
+1. **prompt 强化 alignment 措辞**：明确 `task_assignment ≠ plan_approval`、`bypassPermissions ≠ 协作硬约束覆盖`
+2. **plan approval 信号必须显式**：teammate 不应从间接信号（task 分配通知 / 工具权限提示）推断"已批准"
+3. **共享文件 patch 行号管理**：Phase 1 commit 后行号会变化，主管在重写 §10 启动模板时应贴**最新行号**给 teammate
+4. **fan-in 成本评估**：多 teammate 同时 mailbox 通报时主管 context 滚动快，下次可考虑用 task list 作为主要状态同步通道，mailbox 仅用于 plan / 求助 / 阻塞通知
+5. **F3 严格执行有效但要慢做**：训诫 mailbox 内容写得 detailed（指明违规条款 + 要求 + 后续步骤），C 收到后能精准 self-correct
+6. **uvicorn 重启时机**：所有 patch 落盘后**统一重启**比逐次重启更高效（避免 worker 卡 pymilvus 那种二次坑）
+
+### 遗留问题（V0.4 backlog）
+- 文档去重（原 V0.3 #3 SHA256 已砍）：需要先决策 Milvus collection 是否 drop+重建以加 enable_dynamic_field=True
+- 答案质量批量评估：跑 25 条 testset 对比 use_reranker=True/False 的 answer 准确率，可能需要 LLM-as-judge
+- 答案延时优化：当前 18s（reranker LLM 打分 20 次串行 ~10s + 答案生成 ~3s）。BGE-Reranker 本地 5/3 实测 2.1s，建议 use_reranker 默认走 BGE
+- 协作过程中 C 上传测试残留 1 个 GBK 文件名 PDF（`7122a8cd-...`）+ 1 条孤儿 chunk 在 Milvus collection，需要 housekeeping
+- 严格验收（V0.2 line 222 的 5 项）今天没做，留给明天
+
+### 写在最后（用户视角）
+今天是用户**首次**使用 Claude Code Agent Team。完整跑通了 spawn → plan → 违规 → F3 严格处理 → 落盘 → 测试 → 复盘的端到端流程，3 项功能（V0.3 #1 #2 #4+#5）全部 happy path 通过。multi-agent 协作的 alignment 是真实问题，不是 prompt 写完就管用——需要观察 + 纠偏 + 训诫 + 复盘的完整机制。这次复盘的核心数据点（违规矩阵 + token 消耗 + 整合工作量）将作为 AI 应用架构师方向的工程基线被引用。

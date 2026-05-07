@@ -83,6 +83,16 @@ class MilvusChunkStore:
 
         return chunks
 
+    def delete_by_doc_id(self, doc_id: str) -> int:
+        """按 doc_id 删除所有 chunk，返回删除数量。
+        doc_id 不存在时返回 0（不抛异常）"""
+        result = self.client.delete(
+            collection_name=self.collection_name,
+            filter=f'doc_id == "{doc_id}"',
+        )
+        self.client.flush(collection_name=self.collection_name)
+        return result["delete_count"]
+
     def _ensure_collection(self, embedding_dim: int) -> None:
         if self.client.has_collection(self.collection_name):
             #TODO:milvus的内存加载机制是什么？一次性会加载多少数据进来？怎么保证在数据量很大的情况下不会内存溢出？
