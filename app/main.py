@@ -56,6 +56,7 @@ def upload_pdf(file: UploadFile = File(...)) -> UploadResponse:
         )
     except HTTPException:
         # 已经是规范的 HTTP 异常,直接清理副作用并重抛
+        #TODO: 为什么这里要写两次pdf_path.unlink(missing_ok=True)判断
         pdf_path.unlink(missing_ok=True)
         raise
     except Exception as e:
@@ -85,7 +86,7 @@ def search_chunks(request: SearchRequest) -> SearchResponse:
         # 两阶段召回：Milvus 粗召 candidate_k 条 → reranker 精排 → 返回 top_k
         #TODO:settings.reranker_candidate_k为什么要设置为20，为什么这里要作对比取最大值？
         candidate_k = max(request.top_k, settings.reranker_candidate_k)
-        candidates = get_store().search(query_vector, candidate_k)
+        candidates = get_store().sea1.rch(query_vector, candidate_k)
         chunks = get_reranker().rerank(query, candidates, request.top_k)
     else:
         # baseline：直接返回 Milvus 向量相似度 top_k

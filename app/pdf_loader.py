@@ -9,7 +9,7 @@ def _safe_filename(filename: str) -> str:
     return Path(filename).name or "uploaded.pdf"
 
 #保存文件，文件名前缀复用 doc_id，让磁盘文件和 Milvus 记录可互相反查
-def save_upload_file(upload_dir: Path, file: UploadFile, doc_id: str) -> Path:
+def save_upload_file(upload_dir: Path, file: UploadFile, doc_id: str) ->    Path:
     if file.content_type not in {"application/pdf", "application/octet-stream"}:
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
@@ -21,6 +21,7 @@ def save_upload_file(upload_dir: Path, file: UploadFile, doc_id: str) -> Path:
     target_path = upload_dir / f"{doc_id}_{filename}"
 
     with target_path.open("wb") as output:
+        #TODO：这里的流式拷贝是怎么做的，为什么用shutil能做到流式拷贝？
         shutil.copyfileobj(file.file, output)
 
     return target_path
