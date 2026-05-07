@@ -192,3 +192,36 @@
 
 ### 写在最后（用户视角）
 今天是用户**首次**使用 Claude Code Agent Team。完整跑通了 spawn → plan → 违规 → F3 严格处理 → 落盘 → 测试 → 复盘的端到端流程，3 项功能（V0.3 #1 #2 #4+#5）全部 happy path 通过。multi-agent 协作的 alignment 是真实问题，不是 prompt 写完就管用——需要观察 + 纠偏 + 训诫 + 复盘的完整机制。这次复盘的核心数据点（违规矩阵 + token 消耗 + 整合工作量）将作为 AI 应用架构师方向的工程基线被引用。
+
+## 2026-05-07 — Housekeeping：消费金融文档恢复 + testset_v2 (用户视角)
+
+### 上下文
+B happy path 测试时删除了 `消费金融公司管理办法.pdf`（doc_id=`2f3ccec0-...`，33 chunks），破坏了 5/3 的 76 chunk baseline。需要恢复。
+
+### 关键工程决策（用户做的）
+- **保留原 testset.jsonl 作历史锚点**，不就地修改
+- 复制生成 `eval/testset_v2.jsonl` 作"今日之后"的版本
+- 5 条引用旧 `2f3ccec0-...` 的 expected_doc_id 在 v2 里改为新 doc_id
+
+### 执行
+1. POST /api/upload `E:\360MoveData\Users\wcy\Desktop\消费金融公司管理办法.pdf`
+   - 新 doc_id：`4f73a91c-1bf4-480a-b409-68a61b271aac`
+   - chunk_count=33（与 5/3 完全一致）
+2. 创建 testset_v2.jsonl：`src.replace("2f3ccec0-...", "4f73a91c-...")` 一行 python，5 条全替换
+3. eval baseline（use_reranker=False）：
+
+| 指标 | 5/3 baseline | 今日 v2 | 一致性 |
+|---|---|---|---|
+| Hit@5 | 0.720 | **0.720** | ✅ |
+| MRR | 0.461 | **0.461** | ✅ |
+| p50 延时 | 263ms | 2386ms | ⚠️ 9x（与代码无关，疑 Milvus warm up + 网络）|
+
+### 学到的（值得记住）
+- **DashScope text-embedding-v2 是 deterministic**：同样输入产出同样向量（实证：Hit@5 / MRR 数值完全恢复 = chunk_id 1:1 对应 + COSINE 相似度排序完全一致）
+- **chunking 算法稳定**：同一 PDF 同一 chunk_size/overlap 切出同样 33 个 chunks，chunk_idx 0-32 与 5/3 完全对齐
+- **testset 用 `{doc_id}_{chunk_idx}` 复合 ID 引用**：doc_id 部分在重新上传后会变（uuid4 随机），chunk_idx 部分稳定（切块算法决定）
+- **保留历史 testset 的工程价值**：原 testset.jsonl 作 5/3 baseline 锚点，testset_v2.jsonl 作今日之后的版本，未来再有数据状态变动可继续衍生 v3 — 这是 "evaluation set 有版本管理" 的工程实践
+
+### 副作用 / 遗留
+- `data/uploads/` 里又多一个 GBK 乱码文件名（消费金融新上传时 `requests` 库把 utf-8 文件名编成 latin-1，pdf_loader 没做修复）— 不影响功能（doc_id + chunk 检索 OK），仅显示问题，留 V0.4 修 pdf_loader 时一并处理
+- Milvus collection 现状：4 PDF / **76 chunks**（同 5/3 baseline），消费金融的旧 doc_id `2f3ccec0-...` 永久退役，新 doc_id 是 `4f73a91c-...`
