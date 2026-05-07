@@ -32,3 +32,32 @@
 ### [16:44] 下载BGE模型失败，reranker流程无法执行
 - 问claude desktop拿了LLM兜底策略，走LLM不走BGE了，cursor生成代码我去review
 
+## 2026-05-07 — V0.3 Phase 1 APIRouter 模块化重构
+
+### 重构内容
+- 拆分 `app/main.py` (148 行 → 12 行)：原文件承担 FastAPI 实例 + 全局单例 + 3 个路由 + 4 个工厂函数，全部混在一起
+- 新建 `app/dependencies.py`：迁移 `get_embedder` / `get_store` / `get_reranker` + 全局单例占位 + `validate_vectors`
+- 新建 `app/routers/{health,upload,search}.py`：每个路由独立成模块
+- `app/main.py` 重写为 FastAPI 实例 + `app.include_router` 装配（约 12 行）
+
+### 顺手做的事
+- **修复 `search.py` line 89 typo**：`get_store().sea1.rch(...)` → `.search(...)`。修前 `use_reranker=True` 路径会直接 `AttributeError`，永远不可达——意味着 5/3 BGE 实测的 use_reranker=True 路径其实跑不到此 bug 行（5/3 的 eval_with_bge.py 走的是另一条路径）；但 V0.3 #1 LLM 答案生成会调 search 接口，触发到这条路径
+- 重命名 `_validate_vectors` → `validate_vectors`：从下划线私有改为公开导出（PEP 8），方便跨模块 import
+- TODO 注释原样保留（line 59 / line 87 各一处用户标记的"为什么"问题）
+
+### 行为验证（Gate 2 通过）
+- 静态 import：通过，三业务端点全注册（`/health` / `/api/upload` / `/api/search`）
+- GET /health：200，4ms
+- eval baseline（25 条 testset，use_reranker=False）：**Hit@5=0.720 / MRR=0.461，与 5/3 实测完全一致**——证明重构未破坏行为
+- 报告：`eval/reports/eval_20260507_163732.md`
+
+### 环境踩坑（与代码无关，但耗时）
+- toolref-milvus 启动时 19530 不对外暴露的真因：**Windows excluded port range 包含 9000/9091/9001**，导致 docker port publish 原子性失败（19530 不在排除内但被连带）
+- 修复路径：管理员 PowerShell 跑 `net stop winnat && net start winnat` 重置区间 → `docker start toolref-{etcd,minio,milvus}`
+- 另一个坑：uvicorn worker 第一次 POST 触发 pymilvus 卡死后不会自愈，需要重启 uvicorn 才能恢复
+- 第三个坑：当时 reload 模式下 worker 行为不稳，重启时改用非 reload 单进程更稳
+
+### 下一步（Phase 2）
+- 启动 V0.3 Agent Team（A: LLM 答案生成 / B: 文档删除 / C: 上传增强 #4 #5）
+- V0.3 #3 SHA256 去重已砍（Milvus collection `enable_dynamic_field=False` 不允许加字段）
+
