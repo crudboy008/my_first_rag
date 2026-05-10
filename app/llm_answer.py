@@ -58,12 +58,19 @@ def generate_answer(query: str, chunks: list[dict]) -> str:
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=f"LLM 调用失败: {exc}") from exc
 
+    """
+    try/except 和 if status_code != 200                        
+    处理的是两类完全不同的失败 —— 这是 SDK                     
+    调用的标准双层守卫模式
+    """
     if response.status_code != 200:
         raise HTTPException(
             status_code=502,
             detail=f"LLM 调用失败: status={response.status_code} message={response.message}",
         )
-
+    #打印响应全部参数，自测用
+    print(f"=== response repr ===\n{repr(response)}")
+    #踩坑记录，调用是通过sdk调用所以查看qwen-turbo的返回结果还不行还要看DashScope这个sdk的响应结果
     answer = (response.output.choices[0].message.content or "").strip()
     if not answer:
         return NO_ANSWER_TEXT

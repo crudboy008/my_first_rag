@@ -14,7 +14,6 @@ class BGEReranker:
     - 代价是 reranker 不能做 ANN，只能对少量候选逐一打分，
       所以典型用法是：Milvus top-20 粗召 → reranker 精排 → 返回 top-5。
     """
-    #TODO: Cross-encoder拼接逻辑和使用原理我想知道一下，attention是什么，为什么能捕捉细粒度的词级匹配？
     def __init__(self, model_name: str, use_fp16: bool = False) -> None:
         # model_name 传本地路径时直接加载，传 HF model ID 时才会联网下载到 ~/.cache/huggingface/hub/
         self._model = FlagReranker(model_name, use_fp16=use_fp16)
@@ -37,16 +36,15 @@ class BGEReranker:
         pairs = [[query, text] for text in texts]
 
         # compute_score 返回 List[float]，顺序与 pairs 一一对应
-        #TODO：compute_score的底层原理是什么？
         scores: list[float] = self._model.compute_score(pairs)
 
         # 把 rerank_score 写回每个 chunk dict（不影响原始 score 字段）
-        #TODO:{**chunk, "rerank_score": float(score)}这个写法没看懂，是每一个chunk作为key对应一个（"rerank_score":具体值）的value是吗？
+        #`**` 在 dict 字面量里是**解包操作符**：把 `chunk` 这个 dict 的所有 key-value **复制进新 dict**，然后再加上 `"rerank_score": float(score)` 这一对
         scored_chunks = [
             {**chunk, "rerank_score": float(score)}
             for chunk, score in zip(chunks, scores)
         ]
         #以rerank_score排序
-        #TODO: reverse=True这个值设置的意义是什么？
+        #`reverse=False`（默认）：**升序**（从小到大）
         ranked = sorted(scored_chunks, key=lambda x: x["rerank_score"], reverse=True)
         return ranked[:top_k]

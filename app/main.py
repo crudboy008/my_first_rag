@@ -6,7 +6,6 @@ from app.routers.health import router as health_router
 from app.routers.search import router as search_router
 from app.routers.upload import router as upload_router
 
-
 app = FastAPI(title="my_first_rag", version="0.1.0")
 
 app.include_router(health_router)

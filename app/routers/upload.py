@@ -44,7 +44,7 @@ def upload_pdf(file: UploadFile = File(...)) -> UploadResponse:
         )
     except HTTPException:
         # 已经是规范的 HTTP 异常,直接清理副作用并重抛
-        #TODO: 为什么这里要写两次pdf_path.unlink(missing_ok=True)判断
+        # 原本要返回 502 给客户端的语义被覆盖成 500。客户端无法区分"维度配置错了（上游问题）"和"我们服务真的内部崩了（我方问题）
         pdf_path.unlink(missing_ok=True)
         raise
     except Exception as e:

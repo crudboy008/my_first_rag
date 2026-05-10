@@ -38,13 +38,13 @@ def get_store() -> MilvusChunkStore:
 
     return _store
 
-
 def get_reranker() -> BGEReranker | LLMReranker:
     global _reranker
     if _reranker is None:
         if settings.reranker_backend == "bge":
             _reranker = BGEReranker(
                 model_name=settings.reranker_model,
+                #FP16 = 把模型的权重和激活值从 32-bit 浮点数变成 16-bit,加速作用
                 use_fp16=settings.reranker_use_fp16,
             )
         else:

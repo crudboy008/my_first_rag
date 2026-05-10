@@ -20,7 +20,6 @@ class TongyiEmbedder:
 
         for batch in _batched(texts, self.batch_size):
             #调用大模型
-            #TODO: 这里是怎么做到不开异步不开线程做到同步调用的？
             response = TextEmbedding.call(
                 model=TextEmbedding.Models.text_embedding_v2,
                 input=batch,

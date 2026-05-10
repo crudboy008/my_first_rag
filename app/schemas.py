@@ -41,6 +41,7 @@ class AskRequest(BaseModel):
 class Citation(BaseModel):
     chunk_id: str
     score: float
+    #文本片段
     text_snippet: str
 
 

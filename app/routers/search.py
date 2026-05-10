@@ -19,7 +19,7 @@ def search_chunks(request: SearchRequest) -> SearchResponse:
 
     if request.use_reranker:
         # 两阶段召回：Milvus 粗召 candidate_k 条 → reranker 精排 → 返回 top_k
-        #TODO:settings.reranker_candidate_k为什么要设置为20，为什么这里要作对比取最大值？
+        #防御性编程：用户可能传 `top_k=30`，这时如果 candidate_k 还用配置的 20 → reranker 只能在 20 个里挑 30 个 → 不够。
         candidate_k = max(request.top_k, settings.reranker_candidate_k)
         candidates = get_store().search(query_vector, candidate_k)
         chunks = get_reranker().rerank(query, candidates, request.top_k)

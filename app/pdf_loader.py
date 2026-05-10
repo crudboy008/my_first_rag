@@ -40,7 +40,6 @@ def save_upload_file(upload_dir: Path, file: UploadFile, doc_id: str) ->    Path
     target_path = upload_dir / f"{doc_id}_{filename}"
 
     with target_path.open("wb") as output:
-        #TODO：这里的流式拷贝是怎么做的，为什么用shutil能做到流式拷贝？
         shutil.copyfileobj(file.file, output)
 
     return target_path

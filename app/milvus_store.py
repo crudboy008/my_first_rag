@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from pymilvus import DataType, MilvusClient
 
 
@@ -61,25 +62,28 @@ class MilvusChunkStore:
         results[0]           # 第 0 条查询的结果 → list[Hit]
         """
         for hit in results[0]:
-
-            #TODO: ⚠️ 这里有个不彻底的防御：下面 entity["text"]、entity["doc_id"] 都是用 [] 直接取的，
-            # 如果 entity 真的是 {}，照样会抛 KeyError。所以 .get("entity", {}) 这个兜底其实是形式上的安全，实质上没生效。
-            # 生产代码要么彻底用 .get(..., default)，要么干脆让它 fail-fast。这是一处面试时可以拿来讨论的代码味道（code smell）
-            entity = hit.get("entity", {})
-            # TODO:为什么chunks模板要这么设计?
-            #DDD防腐层
-            chunks.append(
-                {
-                    "id": hit["id"],
-                    "text": entity["text"],
-                    "score": float(hit["distance"]),
-                    "metadata": {
-                        "doc_id": entity["doc_id"],
-                        "chunk_index": entity["chunk_index"],
-                        "source_filename": entity["source_filename"],
-                    },
-                }
-            )
+            # fail-fast：collection schema 强制 4 字段（enable_dynamic_field=False），
+            # 缺字段说明 schema 漂移 / 上游 bug，立即 502 暴露而非 silent default
+            try:
+                entity = hit["entity"]
+                # DDD 防腐层：把 Milvus 原始 hit 结构转换成业务通用 dict，隔离上游 API 变化
+                chunks.append(
+                    {
+                        "id": hit["id"],
+                        "text": entity["text"],
+                        "score": float(hit["distance"]),
+                        "metadata": {
+                            "doc_id": entity["doc_id"],
+                            "chunk_index": entity["chunk_index"],
+                            "source_filename": entity["source_filename"],
+                        },
+                    }
+                )
+            except KeyError as e:
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Milvus response missing required field: {e}",
+                ) from e
 
         return chunks
 
@@ -95,11 +99,9 @@ class MilvusChunkStore:
 
     def _ensure_collection(self, embedding_dim: int) -> None:
         if self.client.has_collection(self.collection_name):
-            #TODO:milvus的内存加载机制是什么？一次性会加载多少数据进来？怎么保证在数据量很大的情况下不会内存溢出？
             self.client.load_collection(collection_name=self.collection_name)
             return
         ##enable_dynamic_field=False 表示禁止动态字段。
-        #TODO:什么是动态字段？
         schema = self.client.create_schema(auto_id=False, enable_dynamic_field=False)
         #"id"：字段名DataType.VARCHAR：字符串类型
         # is_primary=True：主键，每条数据唯一标识，不能重复

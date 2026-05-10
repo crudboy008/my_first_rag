@@ -22,7 +22,7 @@ class Settings(BaseModel):
     reranker_candidate_k: int = int(os.getenv("RERANKER_CANDIDATE_K", "20"))
     # BGE 本地模型配置（backend=bge 时生效）
     reranker_model: str = os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-base")
-    #TODO: RERANKER_USE_FP16这个值有什么作用？为什么要传入？
+    #FP16 = 把模型的权重和激活值从 32-bit 浮点数变成 16-bit
     reranker_use_fp16: bool = os.getenv("RERANKER_USE_FP16", "false").lower() == "true"
     # LLM reranker 配置（backend=llm 时生效）
     llm_reranker_model: str = os.getenv("LLM_RERANKER_MODEL", "qwen-turbo")

@@ -225,3 +225,26 @@ B happy path 测试时删除了 `消费金融公司管理办法.pdf`（doc_id=`2
 ### 副作用 / 遗留
 - `data/uploads/` 里又多一个 GBK 乱码文件名（消费金融新上传时 `requests` 库把 utf-8 文件名编成 latin-1，pdf_loader 没做修复）— 不影响功能（doc_id + chunk 检索 OK），仅显示问题，留 V0.4 修 pdf_loader 时一并处理
 - Milvus collection 现状：4 PDF / **76 chunks**（同 5/3 baseline），消费金融的旧 doc_id `2f3ccec0-...` 永久退役，新 doc_id 是 `4f73a91c-...`
+
+## 2026-05-09 — V0.3 索引选型决策书补录到需求文档（§3.2.1）
+
+### 做了什么
+- 在 V0.3 需求文档新增 **§3.2.1 索引选型决策书**，把"为什么金融场景选 IVF_FLAT"的隐性认知转为可被 review 反对的工程产物
+- §7.2 V0.4 路线图新增 **#11 schema 业务字段补齐**（bank_id / doc_type / product_type / effective_date / region），P1，标注为 V0.4 #2 元数据过滤检索的前置条件
+- 附录 C 工程教训新增 **#11 索引选型看过滤率不看数据量** + **#12 训练目标决定使用方式**两条可复用元规则
+- 文档头部 line 3 加了 5/9 补录注脚
+
+### 为什么这样做
+- 5/9 跟 Claude 复习 KNN 时引出"为什么 RAG 不用纯 KNN / 为什么金融场景选 IVF_FLAT 而非 HNSW"的讨论，发现这条决策在 V0.3 文档里**完全没有记录**——属于隐性认知
+- CLAUDE.md "工程师'深刻'的可观测标志"明确要求"能在评审里反对错误选型并给出替代方案"——决策书就是这种产物
+- 决策书核心论证：金融场景天然高过滤率（用户问"招行信用卡分期"应只搜招行+信用卡+分期相关 chunk），HNSW 在 filter > 90% 时图跳跃失效，IVF_FLAT 因簇内暴力扫而稳定。这条结论反转了"5 百万以下用 HNSW"的常见经验法则
+
+### 当前隐藏问题（决策书自己暴露的）
+- `app/milvus_store.py:45-57` search() 没用 filter — 当前实际是纯向量检索，IVF_FLAT 选型理由"高过滤率"在 V0.3 里**还没被实际利用**
+- `app/milvus_store.py:108-115` schema 缺金融业务字段（bank_id / doc_type / product_type / effective_date / region），所以即使 search() 加 filter 也没字段可 filter
+- 决策书的有效性窗口：**V0.4 内必须完成 schema 业务字段补齐 + search() 加 filter**，否则 IVF_FLAT 在小数据下的小召回损失将被持续承担而无收益
+- 同 V0.3 #3 SHA256 困境：受 `enable_dynamic_field=False` 约束，schema 改造必须 drop+重建 collection（建议 V0.4 #1 SHA256 与 #11 业务字段同步处理，一次 drop+重建解决两件事）
+
+### 学到的（值得记住）
+- **决策书价值不在"做对选择"，在"暴露选择的有效性边界"**：本决策书最有价值的部分是"触发重新评审的 5 条红线"（数据量 / 过滤率 / 延迟 / 内存 / 召回质量），未来任一红线触发都能直接引用本节回滚
+- **隐性认知必须显性化才有工程价值**：5/7 写 V0.3 文档时认为 IVF_FLAT 选型是"显然的事"，但 5/9 跟 Claude 讨论才发现这条决策依赖一连串没明说的假设（高过滤率 / 数据量预期 / metadata filter 实施计划）。文档里没写 = 等于没决策
